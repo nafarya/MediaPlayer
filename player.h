@@ -8,6 +8,10 @@
 #include <QHBoxLayout>
 #include <QMediaPlaylist>
 #include <QSlider>
+#include <QLabel>
+#include <QImage>
+#include <QComboBox>
+#include <QTimer>
 
 class Player : public QWidget
 {
@@ -15,6 +19,7 @@ class Player : public QWidget
 public:
     explicit Player(QWidget *parent = 0);
     void createLayout();
+
 
 signals:
 
@@ -24,6 +29,14 @@ public slots:
     void stopMusic();
     void nextSong();
     void prevSong();
+    void delSong();
+    void slotSetMediaPosition(int);
+    void slotSetDuration(qint64 n);
+    void slotSetSliderPosition(qint64 n);
+    void setCurrentNameOfSong();
+    void addImage();
+    void nextPic();
+    void updateImageTime();
 
 private:
     QMediaPlayer* mediaPlayer;
@@ -38,7 +51,27 @@ private:
     QPushButton* stopButton;
     QPushButton* prevButton;
     QPushButton* nextButton;
-    QSlider* slider;
+    QPushButton* delButton;
+    QPushButton* addImgButton;
+
+    QSlider* sliderVol;
+    QSlider* sliderPos;
+
+    QLabel* currentTime;
+    QLabel* remainingTime;
+    QLabel* currentSong;
+    QLabel* currentImage;
+
+    QComboBox* comboBox;
+    QTimer* timer;
+    QImage img;
+    QPixmap pixmap;
+    int currentImageTime = 0;
+
+    QString msecsToString(qint64 n);
+
+    QList<QString> images;
+    int currentIndexOfPic = 0;
 };
 
 #endif // PLAYER_H
