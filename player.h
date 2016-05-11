@@ -37,15 +37,23 @@ public slots:
     void addImage();
     void nextPic();
     void updateImageTime();
+    void addSongToMyPlaylist();
+    void startMyPLaylist();
+    void updatePlayPauseButton();
 
 private:
     QMediaPlayer* mediaPlayer;
     QMediaPlaylist* playlist;
+    QMediaPlaylist* myPlaylist;
 
     QListWidget* listwidget;
+    QListWidget* listwidgetForMyPLaylist;
 
     QVBoxLayout* mainLayout;
 
+    QPushButton* addToMyPlaylist;
+
+    QPushButton* startMyPLaylistButton;
     QPushButton* openButton;
     QPushButton* playPauseButton;
     QPushButton* stopButton;
@@ -67,6 +75,8 @@ private:
     QImage img;
     QPixmap pixmap;
     int currentImageTime = 0;
+
+    QList<QMediaContent> contentForPlaylist;
 
     QString msecsToString(qint64 n);
 

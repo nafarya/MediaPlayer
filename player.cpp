@@ -6,6 +6,14 @@
 
 Player::Player(QWidget *parent) : QWidget(parent)
 {
+    addToMyPlaylist = new QPushButton();
+    addToMyPlaylist->setText("Add2playlist");
+
+    startMyPLaylistButton = new QPushButton();
+    startMyPLaylistButton->setText("start Playlist");
+
+    listwidgetForMyPLaylist = new QListWidget();
+
     openButton = new QPushButton();
     openButton->setText("Add song");
 
@@ -33,6 +41,8 @@ Player::Player(QWidget *parent) : QWidget(parent)
     playlist = new QMediaPlaylist(mediaPlayer);
     mediaPlayer->setPlaylist(playlist);
 
+    myPlaylist = new QMediaPlaylist(mediaPlayer);
+
     sliderVol = new QSlider();
     mediaPlayer->setVolume(50);
     sliderVol->setRange(0, 100);
@@ -59,6 +69,9 @@ Player::Player(QWidget *parent) : QWidget(parent)
 
     timer = new QTimer(this);
 
+
+    connect(startMyPLaylistButton, SIGNAL(clicked(bool)), this, SLOT(startMyPLaylist()));
+    connect(addToMyPlaylist, SIGNAL(clicked(bool)), this, SLOT(addSongToMyPlaylist()));
     connect(timer, SIGNAL(timeout()), this, SLOT(updateImageTime()));
     connect(sliderPos, SIGNAL(sliderMoved(int)), SLOT(slotSetMediaPosition(int)));
     connect(sliderVol, SIGNAL(valueChanged(int)), mediaPlayer, SLOT(setVolume(int)));
@@ -70,7 +83,7 @@ Player::Player(QWidget *parent) : QWidget(parent)
     connect(delButton, SIGNAL(clicked(bool)), this, SLOT(delSong()));
     connect(addImgButton, SIGNAL(clicked(bool)), this, SLOT(addImage()));
 
-    connect(mediaPlayer, SIGNAL(currentMediaChanged(QMediaContent)), SLOT());
+    connect(listwidget, SIGNAL(currentRowChanged(int)), this, SLOT(updatePlayPauseButton()));
     connect(mediaPlayer, SIGNAL(positionChanged(qint64)), SLOT(slotSetSliderPosition(qint64)));
     connect(mediaPlayer, SIGNAL(durationChanged(qint64)), SLOT(slotSetDuration(qint64)));
 
@@ -110,9 +123,15 @@ void Player::createLayout()
 
     mainLayout = new QVBoxLayout;
 
+    QVBoxLayout* verLayout3 = new QVBoxLayout;
+    verLayout3->addWidget(addToMyPlaylist);
+    verLayout3->addWidget(startMyPLaylistButton);
+    verLayout3->addWidget(listwidgetForMyPLaylist);
+
     QHBoxLayout* mainHorLayout = new QHBoxLayout;
     mainHorLayout->addLayout(verLayout1);
     mainHorLayout->addLayout(verLayout2);
+    mainHorLayout->addLayout(verLayout3);
     mainLayout->addLayout(mainHorLayout);
     setLayout(mainLayout);
 
@@ -149,22 +168,31 @@ void Player::openFile()
         listwidget->addItem(fi.fileName());
     }
     playlist->addMedia(content);
-
+    listwidget->setCurrentRow(0);
+    playlist->setCurrentIndex(listwidget->currentRow());
 }
 
 void Player::playPauseMusic()
 {
-    playlist->setCurrentIndex(listwidget->currentRow());
-    listwidget->setCurrentRow(playlist->currentIndex());
-    currentSong->setText(listwidget->currentItem()->text());
-    if (mediaPlayer->state() == 1) {
-        mediaPlayer->pause();
-        timer->stop();
-        playPauseButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+
+    //listwidget->setCurrentRow(playlist->currentIndex());
+    //currentSong->setText(listwidget->currentItem()->text());
+    if (playlist->currentIndex() == listwidget->currentRow()) {
+        if (mediaPlayer->state() == 1) {
+            mediaPlayer->pause();
+            timer->stop();
+            playPauseButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+        }
+        else {
+            mediaPlayer->play();
+            timer->start(1000);
+            playPauseButton->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
+        }
     }
     else {
+        mediaPlayer->pause();
+        playlist->setCurrentIndex(listwidget->currentRow());
         mediaPlayer->play();
-        timer->start(1000);
         playPauseButton->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
     }
 
@@ -177,16 +205,21 @@ void Player::stopMusic()
 
 void Player::nextSong()
 {
-    playlist->next();
-    listwidget->setCurrentRow(listwidget->currentRow() + 1);
-    setCurrentNameOfSong();
+    if (playlist->currentIndex() + 1 < listwidget->count()) {
+        playlist->next();
+        listwidget->setCurrentRow(listwidget->currentRow() + 1);
+        setCurrentNameOfSong();
+    }
+
 }
 
 void Player::prevSong()
 {
-    playlist->previous();
-    listwidget->setCurrentRow(listwidget->currentRow() - 1);
-    setCurrentNameOfSong();
+    if (playlist->currentIndex() > 0) {
+        playlist->previous();
+        listwidget->setCurrentRow(listwidget->currentRow() - 1);
+        setCurrentNameOfSong();
+    }
 }
 
 void Player::delSong()
@@ -253,9 +286,41 @@ void Player::nextPic()
 
 void Player::updateImageTime()
 {
-    currentImageTime++;
-    if (currentImageTime == comboBox->currentData()) {
-        currentImageTime = 0;
-        nextPic();
+    if (mediaPlayer->state() == 1) {
+        currentImageTime++;
+        if (currentImageTime == comboBox->currentData()) {
+            currentImageTime = 0;
+            nextPic();
+        }
     }
+}
+
+void Player::addSongToMyPlaylist()
+{
+    listwidgetForMyPLaylist->addItem(listwidget->currentItem()->text());
+    contentForPlaylist.push_back(playlist->media(listwidget->currentRow()));
+}
+
+void Player::startMyPLaylist()
+{
+    mediaPlayer->stop();
+
+    listwidget->clear();
+    for (int i = 0; i < listwidgetForMyPLaylist->count(); i++) {
+        listwidget->addItem(listwidgetForMyPLaylist->item(i)->text());
+    }
+    playlist->clear();
+    playlist->addMedia(contentForPlaylist);
+    listwidget->setCurrentRow(0);
+}
+
+void Player::updatePlayPauseButton()
+{
+    if (mediaPlayer->state() == 1)
+        if (playlist->currentIndex() == listwidget->currentRow()) {
+            playPauseButton->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
+        }
+        else {
+            playPauseButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+        }
 }
